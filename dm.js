@@ -8,7 +8,7 @@ async function ask(passedText = null) {
     }
     const system = "";
 
-    const guiValue = document.getElementById('gui-solution-value');
+    const guiValue = document.getElementById('gui-ai-response');
     const statusEl = document.getElementById('gui-status');
 
     // Visual feedback that AI is thinking
