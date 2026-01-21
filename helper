@@ -1,4 +1,5 @@
-  GD6i = {};
+let GD6i;
+GD6i = {};
   GD6i.vb = true;
   var glbz = [193, 197, 199, 211, 223];
   var AAFz = [131, 137, 139];
