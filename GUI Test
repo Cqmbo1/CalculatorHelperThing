@@ -6,7 +6,9 @@
     const parentEl = document.body;
 
     // The central state/configuration object
-    const espConfig = {
+
+let espConfig = window.espConfig || 
+    {
         godMode: false,
         aimFov: 90,
         espType: 1, // Maps to dropdown value
@@ -14,6 +16,7 @@
         dynamicArray: ["Value1", "Value2"], 
         customName: "Guest"
     };
+
 
     // The function called whenever a setting is changed
     function saveSettings() {
