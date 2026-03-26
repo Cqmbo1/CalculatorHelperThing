@@ -515,6 +515,7 @@
     // ==========================================
     // only real ones recognize this
 
+/*
     // Create the main draggable window
     const mainWindow = createFolder("Test Menu", parentEl);
 
@@ -534,3 +535,4 @@
     createFunctionButton(mainWindow.container, "Log Config to Console", () => {
         console.log("Current Configuration:", espConfig);
     });
+*/
