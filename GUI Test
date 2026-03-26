@@ -1,0 +1,536 @@
+    // ==========================================
+    // 1. REQUIRED DEPENDENCIES (Added to make it run)
+    // ==========================================
+    
+    // The default parent element for the GUI
+    const parentEl = document.body;
+
+    // The central state/configuration object
+    const espConfig = {
+        godMode: false,
+        aimFov: 90,
+        espType: 1, // Maps to dropdown value
+        dynamicTest: false,
+        dynamicArray: ["Value1", "Value2"], 
+        customName: "Guest"
+    };
+
+    // The function called whenever a setting is changed
+    function saveSettings() {
+        console.log("Settings updated:", espConfig);
+        // Dispatch the custom event your code listens to for UI updates
+        document.dispatchEvent(new Event('espConfigChange'));
+    }
+
+    // ==========================================
+    // 2. YOUR ORIGINAL GUI CORE CODE
+    // ==========================================
+
+    function createSubmenuItem(item, container) {
+        switch (item.type) {
+            case "slider": return createSlider(item.prop, container, item.name, item.min, item.max, item.step);
+            case "dropdown": return createDropdown(item.prop, container, item.name, item.options, item.keyProperty, item.items);
+            case "toggle": return createToggleButton(item.prop, container, item.name);
+            case "dynamicToggle": return createDynamicToggleButton(item.prop, container, item.name, item.keyProperty);
+            case "button": return createFunctionButton(container, item.name, item.onClick);
+            case "dynamicButton": return createDynamicFunctionButton(container, item.labelFunction, item.onClick);
+            case "text": return createTextInput(item.prop, container, item.name);
+            default: console.warn("Unknown submenu item:", item);
+        }
+    }
+
+    function createFolder(name, parent = parentEl, isSubfolder = false, customTitle = null) {
+        const folder = document.createElement("div");
+        folder.className = 'gui-folder';
+        folder.tabIndex = -1; 
+        folder.style.cssText = `
+            position: ${isSubfolder ? 'relative' : 'absolute'};
+            background: #222;
+            padding: 8px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,255,255,0.3);
+            will-change: transform;
+            color: #0ff;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            width: 160px;
+            user-select: none;
+            cursor: move;
+            z-index: 69420;
+            touch-action: none;
+            ${isSubfolder ? 'margin-top: 4px; display: block;' : ''}
+        `;
+
+        folder.style.pointerEvents = "auto";
+
+        const content = document.createElement("div");
+        content.style.cssText = `
+            padding: 4px;
+            display: ${isSubfolder ? 'none' : 'block'};
+            ${isSubfolder ? 'font-size: 9px !important;' : ''}
+        `;
+
+        let title;
+        let arrow;
+        let isMinimized = isSubfolder;
+
+        if (customTitle) {
+            title = customTitle;
+            arrow = title.querySelector("span:last-child") || { innerText: "▲" };
+        } else {
+            title = document.createElement("div");
+            title.tabIndex = -1;
+            title.style.cssText = `
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                background: #0ff;
+                color: #000;
+                padding: 8px;
+                border-radius: 5px;
+                font-weight: bold;
+                text-align: center;
+                cursor: pointer;
+                font-size: 14px;
+                box-shadow: 0 0 10px rgba(0, 255, 255, 0.6);
+            `;
+
+            arrow = document.createElement("span");
+            arrow.innerText = isSubfolder ? "▲" : "▼";
+
+            const titleText = document.createElement("span");
+            titleText.innerText = name;
+
+            title.appendChild(titleText);
+            title.appendChild(arrow);
+        }
+
+        folder.appendChild(title);
+        folder.appendChild(content);
+        parent.appendChild(folder);
+
+        let hasMoved = false;
+
+        if (!isSubfolder) {
+            let isDragging = false;
+            let currentX, currentY, xOffset, yOffset;
+            let startX, startY;
+
+            const folderWidth = 196; 
+            let folderHeight = folder.offsetHeight || 160; 
+
+            const parentRect = parent.getBoundingClientRect();
+            const containerWidth = parent === parentEl ? window.innerWidth : parentRect.width;
+            const containerHeight = parent === parentEl ? window.innerHeight : parentRect.height;
+
+            xOffset = Math.random() * (containerWidth - folderWidth);
+            yOffset = Math.random() * (containerHeight - folderHeight);
+            xOffset = Math.max(0, Math.min(xOffset, containerWidth - folderWidth));
+            yOffset = Math.max(0, Math.min(yOffset, containerHeight - folderHeight));
+
+            folder.style.left = `${xOffset}px`;
+            folder.style.top = `${yOffset}px`;
+
+            if (parent === parentEl) {
+                parentEl.style.position = 'fixed';
+                parentEl.style.overflow = 'hidden';
+                parentEl.style.minHeight = '100vh';
+            } else {
+                parent.style.position = 'relative';
+                parent.style.overflow = 'hidden';
+            }
+
+            const startDrag = (x, y) => {
+                isDragging = true;
+                hasMoved = false;
+                startX = x;
+                startY = y;
+                currentX = x - xOffset;
+                currentY = y - yOffset;
+            };
+
+            const moveDrag = (x, y) => {
+                if (isDragging) {
+                    const parentOffset = parent === parentEl ? { left: 0, top: 0 } : parent.getBoundingClientRect();
+                    xOffset = x - currentX - parentOffset.left;
+                    yOffset = y - currentY - parentOffset.top;
+                    folderHeight = folder.offsetHeight || 160;
+                    xOffset = Math.max(0, Math.min(xOffset, containerWidth - folderWidth));
+                    yOffset = Math.max(0, Math.min(yOffset, containerHeight - folderHeight));
+                    folder.style.left = `${xOffset}px`;
+                    folder.style.top = `${yOffset}px`;
+                    if (Math.abs(x - startX) > 5 || Math.abs(y - startY) > 5) {
+                        hasMoved = true;
+                    }
+                }
+            };
+
+            const stopDrag = () => {
+                isDragging = false;
+            };
+
+            title.addEventListener("mousedown", (e) => {
+                startDrag(e.clientX, e.clientY);
+                document.addEventListener("mousemove", mouseMove);
+                document.addEventListener("mouseup", mouseUp);
+            });
+
+            const mouseMove = (e) => moveDrag(e.clientX, e.clientY);
+            const mouseUp = () => {
+                stopDrag();
+                document.removeEventListener("mousemove", mouseMove);
+                document.removeEventListener("mouseup", mouseUp);
+            };
+
+            title.addEventListener("touchstart", (e) => {
+                const touch = e.touches[0];
+                startDrag(touch.clientX, touch.clientY);
+            });
+
+            title.addEventListener("touchmove", (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                moveDrag(touch.clientX, touch.clientY);
+            });
+
+            title.addEventListener("touchend", stopDrag);
+
+            let previousWidth = window.innerWidth;
+            window.addEventListener("resize", () => {
+                const newWidth = window.innerWidth;
+                const widthChange = newWidth - previousWidth;
+                previousWidth = newWidth;
+
+                const newContainerWidth = parent === parentEl ? newWidth : parent.getBoundingClientRect().width;
+                const newContainerHeight = parent === parentEl ? window.innerHeight : parent.getBoundingClientRect().height;
+
+                folderHeight = folder.offsetHeight || 160;
+
+                xOffset = Math.max(0, Math.min(xOffset + widthChange, newContainerWidth - folderWidth));
+                yOffset = Math.max(0, Math.min(yOffset, newContainerHeight - folderHeight));
+
+                folder.style.left = `${xOffset}px`;
+                folder.style.top = `${yOffset}px`;
+            });
+        }
+
+        title.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (!hasMoved) {
+                isMinimized = !isMinimized;
+                content.style.display = isMinimized ? "none" : "block";
+                if (!isSubfolder) {
+                    folder.style.height = isMinimized ? "auto" : "unset";
+                }
+                if (arrow) {
+                    arrow.innerText = isMinimized ? "▲" : "▼";
+                }
+            }
+        });
+
+        return { container: content, element: folder };
+    }
+
+    function createToggleButton(property, container, displayName) {
+        const btn = document.createElement("button");
+        btn.tabIndex = -1;
+        btn.style.cssText = `
+            display: block;
+            width: 140px;
+            padding: 8px;
+            margin: 4px 0;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: 0.3s;
+            font-size: 10px;
+            box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+        `;
+
+        function updateButton() {
+            btn.innerText = `${displayName}: ${espConfig[property] ? "ON" : "OFF"}`;
+            btn.style.background = espConfig[property] ? "#0ff" : "#444";
+            btn.style.color = espConfig[property] ? "#000" : "#0ff";
+        }
+
+        btn.onclick = () => {
+            espConfig[property] = !espConfig[property];
+            updateButton();
+            saveSettings();
+        };
+
+        document.addEventListener('espConfigChange', updateButton);
+        updateButton();
+        container.appendChild(btn);
+    }
+
+    const dropdownOptions = {};
+
+    function createDropdown(property, container, baseName, options, keyProperty, items) {
+        dropdownOptions[property] = options;
+
+        const wrapper = document.createElement("div");
+        wrapper.style.position = "relative";
+
+        const label = document.createElement("div");
+        label.style.cssText = "color:#0ff;font-size:10px;margin-bottom:4px;";
+
+        const select = document.createElement("select");
+        select.tabIndex = -1;
+        select.style.cssText = `
+            width:140px;
+            background:#444;
+            color:#0ff;
+            padding:4px;
+            border-radius:5px;
+            border:1px solid #0ff;
+            cursor:pointer;
+            font-size:10px;
+        `;
+
+        for (const [k, v] of Object.entries(options)) {
+            const o = document.createElement("option");
+            o.value = v;
+            o.textContent = k;
+            select.appendChild(o);
+        }
+
+        function updateDropdown() {
+            select.value = espConfig[property];
+            label.textContent = keyProperty
+                ? `${baseName} (${espConfig[keyProperty].join(", ")})`
+                : baseName;
+        }
+
+        select.onchange = () => {
+            espConfig[property] = +select.value;
+            saveSettings();
+        };
+
+        document.addEventListener("espConfigChange", updateDropdown);
+        updateDropdown();
+
+        if (Array.isArray(items) && items.length) {
+            const submenu = document.createElement("div");
+            submenu.style.cssText = `
+                position:absolute;
+                left:145px;
+                top:0;
+                background:#222;
+                border:1px solid #0ff;
+                border-radius:6px;
+                padding:6px;
+                display:none;
+                z-index:100000;
+                box-shadow:0 0 12px rgba(0,255,255,.6);
+            `;
+
+            items.forEach(item => createSubmenuItem(item, submenu));
+
+            select.addEventListener("contextmenu", e => {
+                e.preventDefault();
+                e.stopPropagation();
+                submenu.style.display = submenu.style.display === "block" ? "none" : "block";
+            });
+
+            document.addEventListener("mousedown", e => {
+                if (!wrapper.contains(e.target)) {
+                    submenu.style.display = "none";
+                }
+            });
+
+            wrapper.appendChild(submenu);
+        }
+
+        wrapper.appendChild(label);
+        wrapper.appendChild(select);
+        container.appendChild(wrapper);
+    }
+
+    function enumValueToLabel(key, value) {
+        const options = dropdownOptions[key];
+        if (!options) return '';
+        for (const [label, val] of Object.entries(options)) {
+            if (val === value) return label;
+        }
+        return `Unknown (${value})`;
+    }
+
+    function createDynamicToggleButton(property, container, displayName, keyProperty) {
+        const btn = document.createElement("button");
+        btn.tabIndex = -1;
+        btn.style.cssText = `
+            display: block;
+            width: 140px;
+            padding: 8px;
+            margin: 4px 0;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: 0.3s;
+            font-size: 10px;
+            box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+        `;
+
+        function updateButton() {
+            btn.innerText = `${displayName}: ${espConfig[property] ? "ON" : "OFF"} (${espConfig[keyProperty].join(', ')})`;
+            btn.style.background = espConfig[property] ? "#0ff" : "#444";
+            btn.style.color = espConfig[property] ? "#000" : "#0ff";
+        }
+
+        btn.onclick = () => {
+            espConfig[property] = !espConfig[property];
+            updateButton();
+            saveSettings();
+        };
+
+        document.addEventListener('espConfigChange', updateButton);
+        updateButton();
+        container.appendChild(btn);
+    }
+
+    function createSlider(property, container, displayName, min, max, step) {
+        const label = document.createElement("div");
+        label.style.cssText = "color: #0ff; font-size: 10px;";
+
+        const slider = document.createElement("input");
+        slider.type = "range";
+        slider.min = min;
+        slider.max = max;
+        slider.step = step;
+        slider.tabIndex = -1;
+        slider.style.cssText = `
+            width: 140px;
+            background: #444;
+            margin: 4px 0;
+            box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+        `;
+
+        function updateSlider() {
+            slider.value = espConfig[property];
+            label.innerText = `${displayName}: ${espConfig[property]}`;
+        }
+
+        slider.oninput = () => {
+            espConfig[property] = parseFloat(slider.value);
+            updateSlider();
+            saveSettings();
+        };
+
+        document.addEventListener('espConfigChange', updateSlider);
+        updateSlider();
+        container.appendChild(label);
+        container.appendChild(slider);
+    }
+
+    function createFunctionButton(container, displayName, func) {
+        const btn = document.createElement("button");
+        btn.innerText = displayName;
+        btn.tabIndex = -1;
+        btn.style.cssText = `
+            display: block;
+            width: 140px;
+            padding: 8px;
+            margin: 4px 0;
+            border: 2px solid lime;
+            cursor: pointer;
+            border-radius: 5px;
+            background: #0ff;
+            color: #000;
+            transition: 0.3s;
+            font-size: 10px;
+            box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+        `;
+
+        btn.onclick = func;
+        container.appendChild(btn);
+    }
+
+    function createDynamicFunctionButton(container, labelFunction, func) {
+        const btn = document.createElement("button");
+        btn.tabIndex = -1;
+        btn.style.cssText = `
+            display: block;
+            width: 140px;
+            padding: 8px;
+            margin: 4px 0;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: 0.3s;
+            background: #0ff;
+            color: #000;
+            font-size: 10px;
+            box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+        `;
+
+        function updateButton() {
+            btn.innerText = labelFunction();
+        }
+
+        btn.onclick = func;
+
+        document.addEventListener('espConfigChange', updateButton);
+        updateButton();
+        container.appendChild(btn);
+    }
+
+    function createTextInput(property, container, displayName) {
+        const label = document.createElement("div");
+        label.innerText = displayName;
+        label.style.cssText = "color: #0ff; font-size: 10px;";
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.tabIndex = -1;
+        input.style.cssText = `
+            width: 140px;
+            background: #444;
+            color: #0ff;
+            padding: 4px;
+            border-radius: 5px;
+            border: none;
+            margin: 4px 0;
+            font-size: 10px;
+            box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+        `;
+
+        function updateInput() {
+            input.value = espConfig[property];
+        }
+
+        input.onchange = () => {
+            espConfig[property] = input.value;
+            saveSettings();
+        };
+
+        document.addEventListener('espConfigChange', updateInput);
+        updateInput();
+        container.appendChild(label);
+        container.appendChild(input);
+    }
+
+    // ==========================================
+    // 3. INITIALIZATION (Building the actual menu)
+    // ==========================================
+    // only real ones recognize this
+
+    // Create the main draggable window
+    const mainWindow = createFolder("Test Menu", parentEl);
+
+    // Populate it with some controls matching the espConfig object
+    createToggleButton("godMode", mainWindow.container, "Enable God Mode");
+    createSlider("aimFov", mainWindow.container, "Aim FOV", 10, 180, 1);
+    createTextInput("customName", mainWindow.container, "Display Name");
+    
+    createDropdown("espType", mainWindow.container, "ESP Mode", {
+        "Off": 0,
+        "2D Boxes": 1,
+        "Skeletons": 2
+    });
+
+    createDynamicToggleButton("dynamicTest", mainWindow.container, "Dynamic Array Toggle", "dynamicArray");
+
+    createFunctionButton(mainWindow.container, "Log Config to Console", () => {
+        console.log("Current Configuration:", espConfig);
+    });
