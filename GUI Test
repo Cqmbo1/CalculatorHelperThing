@@ -3,27 +3,21 @@
     // ==========================================
     
     // The default parent element for the GUI
-    const parentEl = document.body;
+window.parentEl = document.body;
+window.espConfig = window.espConfig || {
+    godMode: false,
+    aimFov: 90,
+    espType: 1,
+    dynamicTest: false,
+    dynamicArray: ["Value1", "Value2"],
+    customName: "Guest"
+};
 
-    // The central state/configuration object
-
-let espConfig = window.espConfig || 
-    {
-        godMode: false,
-        aimFov: 90,
-        espType: 1, // Maps to dropdown value
-        dynamicTest: false,
-        dynamicArray: ["Value1", "Value2"], 
-        customName: "Guest"
-    };
-
-
-    // The function called whenever a setting is changed
-    function saveSettings() {
-        console.log("Settings updated:", espConfig);
-        // Dispatch the custom event your code listens to for UI updates
-        document.dispatchEvent(new Event('espConfigChange'));
-    }
+// Global Save Function
+window.saveSettings = function() {
+    console.log("Settings updated:", window.espConfig);
+    document.dispatchEvent(new Event('window.espConfigChange'));
+};
 
     // ==========================================
     // 2. YOUR ORIGINAL GUI CORE CODE
@@ -251,18 +245,18 @@ let espConfig = window.espConfig ||
         `;
 
         function updateButton() {
-            btn.innerText = `${displayName}: ${espConfig[property] ? "ON" : "OFF"}`;
-            btn.style.background = espConfig[property] ? "#0ff" : "#444";
-            btn.style.color = espConfig[property] ? "#000" : "#0ff";
+            btn.innerText = `${displayName}: ${window.espConfig[property] ? "ON" : "OFF"}`;
+            btn.style.background = window.espConfig[property] ? "#0ff" : "#444";
+            btn.style.color = window.espConfig[property] ? "#000" : "#0ff";
         }
 
         btn.onclick = () => {
-            espConfig[property] = !espConfig[property];
+            window.espConfig[property] = !window.espConfig[property];
             updateButton();
             saveSettings();
         };
 
-        document.addEventListener('espConfigChange', updateButton);
+        document.addEventListener('window.espConfigChange', updateButton);
         updateButton();
         container.appendChild(btn);
     }
@@ -299,18 +293,18 @@ let espConfig = window.espConfig ||
         }
 
         function updateDropdown() {
-            select.value = espConfig[property];
+            select.value = window.espConfig[property];
             label.textContent = keyProperty
-                ? `${baseName} (${espConfig[keyProperty].join(", ")})`
+                ? `${baseName} (${window.espConfig[keyProperty].join(", ")})`
                 : baseName;
         }
 
         select.onchange = () => {
-            espConfig[property] = +select.value;
+            window.espConfig[property] = +select.value;
             saveSettings();
         };
 
-        document.addEventListener("espConfigChange", updateDropdown);
+        document.addEventListener("window.espConfigChange", updateDropdown);
         updateDropdown();
 
         if (Array.isArray(items) && items.length) {
@@ -376,18 +370,18 @@ let espConfig = window.espConfig ||
         `;
 
         function updateButton() {
-            btn.innerText = `${displayName}: ${espConfig[property] ? "ON" : "OFF"} (${espConfig[keyProperty].join(', ')})`;
-            btn.style.background = espConfig[property] ? "#0ff" : "#444";
-            btn.style.color = espConfig[property] ? "#000" : "#0ff";
+            btn.innerText = `${displayName}: ${window.espConfig[property] ? "ON" : "OFF"} (${window.espConfig[keyProperty].join(', ')})`;
+            btn.style.background = window.espConfig[property] ? "#0ff" : "#444";
+            btn.style.color = window.espConfig[property] ? "#000" : "#0ff";
         }
 
         btn.onclick = () => {
-            espConfig[property] = !espConfig[property];
+            window.espConfig[property] = !window.espConfig[property];
             updateButton();
             saveSettings();
         };
 
-        document.addEventListener('espConfigChange', updateButton);
+        document.addEventListener('window.espConfigChange', updateButton);
         updateButton();
         container.appendChild(btn);
     }
@@ -410,17 +404,17 @@ let espConfig = window.espConfig ||
         `;
 
         function updateSlider() {
-            slider.value = espConfig[property];
-            label.innerText = `${displayName}: ${espConfig[property]}`;
+            slider.value = window.espConfig[property];
+            label.innerText = `${displayName}: ${window.espConfig[property]}`;
         }
 
         slider.oninput = () => {
-            espConfig[property] = parseFloat(slider.value);
+            window.espConfig[property] = parseFloat(slider.value);
             updateSlider();
             saveSettings();
         };
 
-        document.addEventListener('espConfigChange', updateSlider);
+        document.addEventListener('window.espConfigChange', updateSlider);
         updateSlider();
         container.appendChild(label);
         container.appendChild(slider);
@@ -473,7 +467,7 @@ let espConfig = window.espConfig ||
 
         btn.onclick = func;
 
-        document.addEventListener('espConfigChange', updateButton);
+        document.addEventListener('window.espConfigChange', updateButton);
         updateButton();
         container.appendChild(btn);
     }
@@ -499,15 +493,15 @@ let espConfig = window.espConfig ||
         `;
 
         function updateInput() {
-            input.value = espConfig[property];
+            input.value = window.espConfig[property];
         }
 
         input.onchange = () => {
-            espConfig[property] = input.value;
+            window.espConfig[property] = input.value;
             saveSettings();
         };
 
-        document.addEventListener('espConfigChange', updateInput);
+        document.addEventListener('window.espConfigChange', updateInput);
         updateInput();
         container.appendChild(label);
         container.appendChild(input);
@@ -522,7 +516,7 @@ let espConfig = window.espConfig ||
     // Create the main draggable window
     const mainWindow = createFolder("Test Menu", parentEl);
 
-    // Populate it with some controls matching the espConfig object
+    // Populate it with some controls matching the window.espConfig object
     createToggleButton("godMode", mainWindow.container, "Enable God Mode");
     createSlider("aimFov", mainWindow.container, "Aim FOV", 10, 180, 1);
     createTextInput("customName", mainWindow.container, "Display Name");
@@ -536,7 +530,7 @@ let espConfig = window.espConfig ||
     createDynamicToggleButton("dynamicTest", mainWindow.container, "Dynamic Array Toggle", "dynamicArray");
 
     createFunctionButton(mainWindow.container, "Log Config to Console", () => {
-        console.log("Current Configuration:", espConfig);
+        console.log("Current Configuration:", window.espConfig);
     });
 */
 
