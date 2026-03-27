@@ -539,3 +539,13 @@ let espConfig = window.espConfig ||
         console.log("Current Configuration:", espConfig);
     });
 */
+
+window.createSubmenuItem = createSubmenuItem;
+window.createFolder = createFolder;
+window.createToggleButton = createToggleButton;
+window.createDropdown = createDropdown;
+window.createSlider = createSlider;
+window.createFunctionButton = createFunctionButton;
+window.createDynamicFunctionButton = createDynamicFunctionButton;
+window.createTextInput = createTextInput;
+window.createDynamicToggleButton = createDynamicToggleButton;
