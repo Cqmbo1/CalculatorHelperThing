@@ -1,0 +1,30 @@
+// Configuration
+const dbName = "c3-localstorage-92dufx7q52r";
+const storeName = "keyvaluepairs"; // Construct 3 usually uses this store name
+const saveKey = "savegame";
+const targetLevel = 10; // Change this to the level you want
+
+let request = indexedDB.open(dbName);
+
+request.onsuccess = function(e) {
+    let db = e.target.result;
+    let transaction = db.transaction([storeName], "readwrite");
+    let store = transaction.objectStore(storeName);
+    
+    // 1. Get the current save
+    let getRequest = store.get(saveKey);
+    
+    getRequest.onsuccess = function() {
+        let data = JSON.parse(getRequest.result);
+        
+        // 2. Modify the level (Index 0, 0, 0)
+        data.data[0][0][0] = targetLevel;
+        
+        // 3. Put it back into IndexedDB
+        let updateRequest = store.put(JSON.stringify(data), saveKey);
+        
+        updateRequest.onsuccess = () => {
+            console.log(`%c Success! Level changed to ${targetLevel}. Refresh the page!`, "color: green; font-weight: bold;");
+        };
+    };
+};
