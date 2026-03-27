@@ -3,7 +3,24 @@
     // ==========================================
     
     // The default parent element for the GUI
-window.parentEl = document.body;
+//window.parentEl = document.body;
+window.parentEl = document.createElement('div');
+window.parentEl.id = "toggleparent";
+Object.assign(window.parentEl.style, {
+  position: "fixed",
+  top: "0",
+  left: "0",
+  width: "100vw",
+  height: "100vh",
+  background: "rgba(0, 0, 0, 0.25)",
+  zIndex: "9998",
+  overflow: "hidden",
+  display: "block",
+  margin: "0",
+  padding: "0",
+  pointerEvents: "none", // ✅ allows clicks to pass through
+});
+document.body.appendChild(window.parentEl);
 window.espConfig = window.espConfig || {
     godMode: false,
     aimFov: 90,
