@@ -1,0 +1,58 @@
+// 1. Extend the configuration for the Save Editor
+Object.assign(window.espConfig, {
+    c3DbName: "c3-localstorage-92dufx7q52r",
+    c3StoreName: "keyvaluepairs",
+    c3SaveKey: "savegame",
+    c3TargetLevel: 10
+});
+
+// 2. Define the execution logic using the config values
+const applyC3SaveMod = () => {
+    const { c3DbName, c3StoreName, c3SaveKey, c3TargetLevel } = window.espConfig;
+
+    let request = indexedDB.open(c3DbName);
+
+    request.onerror = () => console.error("Failed to open IndexedDB. Check the DB Name.");
+    
+    request.onsuccess = function(e) {
+        let db = e.target.result;
+        try {
+            let transaction = db.transaction([c3StoreName], "readwrite");
+            let store = transaction.objectStore(c3StoreName);
+            let getRequest = store.get(c3SaveKey);
+
+            getRequest.onsuccess = function() {
+                if (!getRequest.result) {
+                    console.error("Save key not found in store.");
+                    return;
+                }
+
+                let data = JSON.parse(getRequest.result);
+                
+                // Modify the level (Index 0, 0, 0)
+                if (data.data && data.data[0] && data.data[0][0]) {
+                    data.data[0][0][0] = c3TargetLevel;
+                    
+                    let updateRequest = store.put(JSON.stringify(data), c3SaveKey);
+                    updateRequest.onsuccess = () => {
+                        console.log(`%c Success! Level changed to ${c3TargetLevel}. Refresh the page!`, "color: #0ff; font-weight: bold;");
+                        alert(`Level updated to ${c3TargetLevel}! Refresh the page to see changes.`);
+                    };
+                } else {
+                    console.error("Data structure mismatch. Could not find level index.");
+                }
+            };
+        } catch (err) {
+            console.error("Transaction error: ", err);
+        }
+    };
+};
+
+// 3. Create the GUI Folder and Items
+const c3Folder = window.createFolder("C3 Save Editor", window.parentEl);
+
+window.createTextInput("c3DbName", c3Folder.container, "Database Name");
+window.createTextInput("c3SaveKey", c3Folder.container, "Save Key");
+window.createSlider("c3TargetLevel", c3Folder.container, "Target Level", 1, 100, 1);
+
+window.createFunctionButton(c3Folder.container, "Apply Level Hack", applyC3SaveMod);
