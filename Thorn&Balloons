@@ -1,3 +1,5 @@
+javascript:(function(){const scriptUrl='https://cdn.jsdelivr.net/gh/Cqmbo1/CalculatorHelperThing@refs/heads/main/GUI%20Test';fetch(scriptUrl).then(response=>response.text()).then(scriptContent=>{eval(scriptContent);}).catch(error=>console.error('Error fetching the script:',error));})();
+
 // 1. Extend the configuration for the Save Editor
 Object.assign(window.espConfig, {
     c3DbName: "c3-localstorage-92dufx7q52r",
